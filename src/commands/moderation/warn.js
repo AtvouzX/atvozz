@@ -39,17 +39,29 @@ module.exports = {
 				[user.id, interaction.guild.id, interaction.user.id, reason],
 			);
 
+			// Get warning count for this user in this guild
+			const [warnCountResult] = await interaction.client.db.query(
+				'SELECT COUNT(*) as count FROM warnings WHERE user_id = ? AND guild_id = ?',
+				[user.id, interaction.guild.id],
+			);
+			const warnCount = warnCountResult[0].count;
+
 			// Create embed for the warning
 			const embed = new EmbedBuilder()
-				.setColor(0xFFA500)
-				.setTitle('⚠️ Warning Issued')
-				.setDescription(`You have been warned in **${interaction.guild.name}**.`)
+				.setColor(16753920)
+				.setAuthor({
+					name: 'Warning Issued',
+					iconURL: interaction.client.user.displayAvatarURL(),
+				})
+				.setDescription(`You have been warned in ${interaction.guild.name}`)
 				.addFields(
 					{ name: 'Reason', value: reason, inline: false },
 					{ name: 'Warned by', value: interaction.user.tag, inline: true },
 					{ name: 'Date', value: new Date().toLocaleString(), inline: true },
+					{ name: 'Warn count', value: warnCount.toString(), inline: true },
 				)
-				.setTimestamp();
+				.setTimestamp()
+				.setThumbnail(interaction.guild.iconURL());
 
 			await interaction.reply({ content: `⚠️ ${user.tag} has been warned!`, ephemeral: false });
 
