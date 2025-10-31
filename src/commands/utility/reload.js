@@ -1,5 +1,6 @@
 const { SlashCommandBuilder } = require('discord.js');
 const path = require('node:path');
+const fs = require('node:fs');
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -19,7 +20,25 @@ module.exports = {
 			return interaction.reply(`There is no command with name \`${commandName}\`.`);
 		}
 
-		const commandPath = path.join(__dirname, `${commandName}.js`);
+		// Find the command file path
+		const commandsPath = path.join(__dirname, '..');
+		const commandFolders = fs.readdirSync(commandsPath).filter(folder => {
+			const folderPath = path.join(commandsPath, folder);
+			return fs.statSync(folderPath).isDirectory();
+		});
+
+		let commandPath = null;
+		for (const folder of commandFolders) {
+			const filePath = path.join(commandsPath, folder, `${commandName}.js`);
+			if (fs.existsSync(filePath)) {
+				commandPath = filePath;
+				break;
+			}
+		}
+
+		if (!commandPath) {
+			return interaction.reply(`Could not find the file for command \`${commandName}\`.`);
+		}
 
 		delete require.cache[require.resolve(commandPath)];
 
