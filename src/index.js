@@ -3,14 +3,28 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { Client, Collection, GatewayIntentBits } = require('discord.js');
 require('dotenv').config({ path: `.env.${process.env.NODE_ENV || 'development'}` });
+const { createPool, query, initDatabase } = require('./database');
 
 const token = process.env.DISCORD_TOKEN;
+
+// Initialize database connection and schema
+(async () => {
+	try {
+		await createPool();
+		await initDatabase();
+	}
+	catch (error) {
+		console.error('Database initialization failed:', error);
+		process.exit(1);
+	}
+})();
 
 // Create a new client instance
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
 client.cooldowns = new Collection();
 client.commands = new Collection();
+client.db = { query };
 
 const foldersPath = path.join(__dirname, 'commands');
 const commandFolders = fs.readdirSync(foldersPath);
