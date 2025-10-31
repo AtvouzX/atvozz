@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -18,7 +18,7 @@ module.exports = {
 		const member = interaction.guild.members.cache.get(user.id);
 
 		if (!member) {
-			return interaction.reply({ content: 'User not found in this server.', ephemeral: true });
+			return interaction.reply({ content: 'User not found in this server.', flags: MessageFlags.Ephemeral });
 		}
 
 		try {
@@ -40,11 +40,11 @@ module.exports = {
 			);
 
 			// Get warning count for this user in this guild
-			const [warnCountResult] = await interaction.client.db.query(
+			const [warnCountRow] = await interaction.client.db.query(
 				'SELECT COUNT(*) as count FROM warnings WHERE user_id = ? AND guild_id = ?',
 				[user.id, interaction.guild.id],
 			);
-			const warnCount = warnCountResult[0].count;
+			const warnCount = warnCountRow ? warnCountRow.count : 0;
 
 			// Create embed for the warning
 			const embed = new EmbedBuilder()
@@ -63,7 +63,7 @@ module.exports = {
 				.setTimestamp()
 				.setThumbnail(interaction.guild.iconURL());
 
-			await interaction.reply({ content: `⚠️ ${user.tag} has been warned!`, ephemeral: false });
+			await interaction.reply({ content: `⚠️ ${user.tag} has been warned!` });
 
 			try {
 				// Try to DM the user
@@ -71,12 +71,12 @@ module.exports = {
 			}
 			catch (error) {
 				console.error('Failed to DM user:', error);
-				await interaction.followUp({ content: 'Could not send DM to the user.', ephemeral: true });
+				await interaction.followUp({ content: 'Could not send DM to the user.', flags: MessageFlags.Ephemeral });
 			}
 		}
 		catch (error) {
 			console.error('Database error:', error);
-			await interaction.reply({ content: 'An error occurred while processing the warning.', ephemeral: true });
+			await interaction.reply({ content: 'An error occurred while processing the warning.', flags: MessageFlags.Ephemeral });
 		}
 	},
 };
